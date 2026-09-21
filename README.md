@@ -189,6 +189,21 @@ npx github-stars sync
 npx github-stars catalog --mode merge
 ```
 
+### CLI Options Reference
+
+| Option | Command(s) | Description |
+|---|---|---|
+| `--category <name>` | `search` | Filter search scope to a specific category. |
+| `--limit <number>` | `search`, `recommend` | Maximum number of results to return (default: 10 for search, 5 for recommend). |
+| `--min-score <number>` | `search` | Minimum BM25 similarity score threshold (default: 0.1). |
+| `--filter <type>` | `audit` | Filter audit report: `all`, `stale` (>180d or dead), `archived`, or `unlicensed`. |
+| `--min-health <number>` | `audit` | Minimum composite health score threshold (0-100). |
+| `--language <name>` | `recommend` | Constrain stack recommendations by programming language (e.g. `Go`, `Rust`, `Python`, `TypeScript`). |
+| `--mode <merge\|overwrite>` | `catalog` | Export mode: `merge` (preserves manual notes and merges new repos) or `overwrite`. |
+| `--file <path>` | All | Path to custom `GITHUB_STARS.md` catalog file. |
+| `--refresh` | `audit` | Refresh live repository metadata from GitHub API into local cache. |
+| `--json` | All | Output results in clean, machine-readable JSON format. |
+
 ---
 
 ## 📂 Canonical Baseline Taxonomy

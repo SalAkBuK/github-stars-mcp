@@ -1010,7 +1010,7 @@ async function githubRest(endpoint, options = {}) {
     : `https://api.github.com${endpoint}`;
 
   const headers = {
-    "User-Agent": "github-stars-mcp/1.4.0",
+    "User-Agent": "github-stars-mcp/1.5.0",
     Authorization: `Bearer ${token}`,
     Accept: options.accept || "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
@@ -1347,7 +1347,7 @@ function triggerPrefetch(nextPage, perPage, sort, direction) {
 const server = new Server(
   {
     name: "github-stars-mcp",
-    version: "1.4.0",
+    version: "1.5.0",
   },
   {
     capabilities: {
@@ -3426,7 +3426,7 @@ async function main() {
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("github-stars-mcp running on stdio (v1.4.0 - Production Resilience Layer)");
+  console.error("github-stars-mcp running on stdio (v1.5.0 - Production Resilience Layer)");
 }
 
 const isDirectExecution =

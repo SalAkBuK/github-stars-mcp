@@ -33,6 +33,13 @@ assert.strictEqual(stemWord("engines"), "engin");
 assert.strictEqual(stemWord("decisions"), "decision");
 assert.strictEqual(stemWord("simulations"), "simulat");
 
+const unicodeTokens = tokenize("C++ and C# developer in café using 智能决策");
+assert(unicodeTokens.includes("c++"), "Must include tech token 'c++'");
+assert(unicodeTokens.includes("c#"), "Must include tech token 'c#'");
+assert(unicodeTokens.includes("café"), "Must include accented 'café'");
+assert(unicodeTokens.includes("cafe"), "Must include accent-normalized 'cafe'");
+assert(unicodeTokens.includes("智能决策"), "Must include CJK token '智能决策'");
+
 // Edge cases for tokenizer
 assert.deepStrictEqual(tokenize(""), []);
 assert.deepStrictEqual(tokenize(null), []);
@@ -40,7 +47,7 @@ assert.deepStrictEqual(tokenize(undefined), []);
 assert.deepStrictEqual(tokenize("   "), []);
 assert.deepStrictEqual(tokenize("!!! ???"), []);
 
-console.log("-> PASS: Tokenizer and stemming verified!");
+console.log("-> PASS: Tokenizer, Unicode, tech tokens, and stemming verified!");
 
 // [TEST 2] Field Weights
 console.log("\n[TEST 2] Verifying multi-field weights configuration...");
@@ -148,6 +155,14 @@ const malformedDocEngine = new BM25SearchEngine([
 const edgeRes = malformedDocEngine.search("valid");
 assert.strictEqual(edgeRes.length, 1);
 assert.strictEqual(edgeRes[0].name, "valid/repo");
+
+// Test min_score: 0 does not return completely unmatched documents
+const zeroMatchRes = malformedDocEngine.search("unmatchedterm", { min_score: 0 });
+assert.strictEqual(zeroMatchRes.length, 0, "min_score: 0 must not return docs with 0 matching terms");
+
+// Test numeric string limit & min_score
+const strOptionRes = malformedDocEngine.search("valid", { limit: "1", min_score: "0.05" });
+assert.strictEqual(strOptionRes.length, 1);
 
 console.log("-> PASS: Edge cases and malformed input handling verified!");
 console.log("\n=== All Concept Search Tests PASSED! ===");

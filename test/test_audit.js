@@ -166,6 +166,10 @@ const unlicensedTests = [
   "UNKNOWN",
   "Custom Proprietary",
   { spdx_id: "NOASSERTION" },
+  { spdx_id: 123 },
+  { key: null, name: "" },
+  123,
+  true,
 ];
 
 for (const lic of unlicensedTests) {
@@ -299,21 +303,35 @@ const unlicAudit = auditRepositories(sampleCollection, {
 assert.strictEqual(unlicAudit.filtered_count, 1, "Unlicensed filter must return 1 repo");
 assert.strictEqual(unlicAudit.repositories[0].name, "ghost/forgotten");
 
-// Filter: min_health_score
+// Filter: min_health_score (numeric and numeric string)
 const minHealthAudit = auditRepositories(sampleCollection, {
   filter: "all",
-  min_health_score: 50,
+  min_health_score: "50",
   referenceDate: FIXED_NOW,
 });
 for (const r of minHealthAudit.repositories) {
   assert(r.health_score >= 50, "Every repo must satisfy min_health_score >= 50");
 }
 
-// Edge Cases: Empty array, null options
+// Edge Cases: Empty array, null options, collections with null/invalid items
 const emptyAudit = auditRepositories([]);
 assert.strictEqual(emptyAudit.total_audited, 0);
 assert.strictEqual(emptyAudit.filtered_count, 0);
 assert.strictEqual(emptyAudit.average_health_score, 0);
 
-console.log("-> PASS: Collection audit aggregation and filtering verified!");
+// Robustness: Collection with null, undefined, non-object items
+const dirtyCollection = [null, undefined, "not-a-repo", 123, primeRepo];
+const dirtyAudit = auditRepositories(dirtyCollection, { referenceDate: FIXED_NOW });
+assert.strictEqual(dirtyAudit.total_audited, 1, "Only valid object repo should be audited");
+assert.strictEqual(dirtyAudit.filtered_count, 1);
+assert.strictEqual(dirtyAudit.repositories[0].name, "stellar/prime");
+
+// Freshness Edge Case: String days_since_push and starred_at isolation
+const strDaysRepo = { name: "test/str-days", days_since_push: "45" };
+assert.strictEqual(classifyFreshness(strDaysRepo, FIXED_NOW).freshness, "ACTIVE");
+
+const starredOnlyRepo = { name: "test/starred-only", starred_at: "2026-09-20T12:00:00Z" };
+assert.strictEqual(classifyFreshness(starredOnlyRepo, FIXED_NOW).freshness, "UNKNOWN", "starred_at alone must not fake active freshness");
+
+console.log("-> PASS: Collection audit aggregation, filtering, and robustness verified!");
 console.log("\n=== All Repository Health Audit Tests PASSED! ===");

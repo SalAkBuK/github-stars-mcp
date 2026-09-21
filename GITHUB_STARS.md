@@ -1,21 +1,20 @@
 # Curated GitHub Starred Repositories
 
-> Automatically categorized and curated via GitHub Stars MCP on 2026-09-21.
+> Automatically categorized and curated via GitHub Stars CLI on 2026-09-21.
 
 ## Table of Contents
 
-- [AI & Agent Infrastructure](#ai--agent-infrastructure) (21)
-- [Developer Tools & CLI](#developer-tools--cli) (12)
-- [System Design & Backend Architecture](#system-design--backend-architecture) (7)
-- [Frontend & UI Libraries](#frontend--ui-libraries) (7)
-- [Databases & Data Engineering](#databases--data-engineering) (2)
-- [Security & Reverse Engineering](#security--reverse-engineering) (6)
-- [Educational & Roadmaps](#educational--roadmaps) (12)
-- [Inspiration & Creative Ideas](#inspiration--creative-ideas) (8)
+- [AI & Agent Infrastructure](#ai-agent-infrastructure) (21)
+- [Developer Tools & CLI](#developer-tools-cli) (12)
+- [System Design & Backend Architecture](#system-design-backend-architecture) (7)
+- [Frontend & UI Libraries](#frontend-ui-libraries) (7)
+- [Databases & Data Engineering](#databases-data-engineering) (2)
+- [Security & Reverse Engineering](#security-reverse-engineering) (6)
+- [Educational & Roadmaps](#educational-roadmaps) (12)
+- [Inspiration & Creative Ideas](#inspiration-creative-ideas) (8)
 
 ---
 
-<a id="ai-agent-infrastructure"></a>
 ## AI & Agent Infrastructure
 
 *Agent harnesses, LLM toolkits, MCP servers, and prompt frameworks.*
@@ -148,7 +147,6 @@ Multilingual, non-autoregressive System 1 decision engine evaluating typed decis
 
 ---
 
-<a id="developer-tools-cli"></a>
 ## Developer Tools & CLI
 
 ### [codetesla51/screentime](https://github.com/codetesla51/screentime)
@@ -225,7 +223,6 @@ Command-line tool for configuring, provisioning, and monitoring Claude Code prof
 
 ---
 
-<a id="system-design-backend-architecture"></a>
 ## System Design & Backend Architecture
 
 ### [codetesla51/nine-fives](https://github.com/codetesla51/nine-fives)
@@ -272,7 +269,6 @@ Curated catalog of distributed systems literature, architecture blueprints, mess
 
 ---
 
-<a id="frontend-ui-libraries"></a>
 ## Frontend & UI Libraries
 
 ### [kazdenc/regen-icons](https://github.com/kazdenc/regen-icons)
@@ -319,7 +315,6 @@ Comprehensive library of 200+ animated, interactive React UI components built wi
 
 ---
 
-<a id="databases-data-engineering"></a>
 ## Databases & Data Engineering
 
 ### [Crosstalk-Solutions/project-nomad](https://github.com/Crosstalk-Solutions/project-nomad)
@@ -336,7 +331,6 @@ Situational awareness intelligence dashboard aggregating real-time geopolitical 
 
 ---
 
-<a id="security-reverse-engineering"></a>
 ## Security & Reverse Engineering
 
 ### [The-XSS-Rat/SecurityTesting](https://github.com/The-XSS-Rat/SecurityTesting)
@@ -377,7 +371,6 @@ Portable wireless offensive and defensive security suite for ESP32 devices suppo
 
 ---
 
-<a id="educational-roadmaps"></a>
 ## Educational & Roadmaps
 
 ### [nilbuild/developer-roadmap](https://github.com/nilbuild/developer-roadmap)
@@ -454,7 +447,6 @@ Open-access Harvard textbook series detailing the foundations, scaling laws, and
 
 ---
 
-<a id="inspiration-creative-ideas"></a>
 ## Inspiration & Creative Ideas
 
 ### [receiptline/receiptline](https://github.com/receiptline/receiptline)

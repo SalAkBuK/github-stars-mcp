@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import { execFile } from "node:child_process";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -86,14 +87,68 @@ assert(Array.isArray(recJson.recommendations));
 assert(recJson.recommendations.length > 0);
 assert.strictEqual(recJson.recommendations[0].name, "codetesla51/screentime");
 assert(recJson.recommendations[0].install_command.includes("go install"));
+
+// Test formatted output count does not display 'undefined'
+const recFmtRes = await execFileAsync("node", [
+  CLI_PATH,
+  "recommend",
+  "screen tracker",
+]);
+assert(!recFmtRes.stdout.includes("undefined"), "Formatted output must not display 'undefined'");
+assert(/Evaluated \d+ starred repos/.test(recFmtRes.stdout), "Must display numeric evaluated count");
+
+// Test language inference for Rust
+const recRustRes = await execFileAsync("node", [
+  CLI_PATH,
+  "recommend",
+  "headless browser",
+  "--language",
+  "rust",
+  "--json",
+]);
+const recRustJson = JSON.parse(recRustRes.stdout);
+assert.strictEqual(recRustJson.recommendations[0]?.language, "Rust", "Inferred language for Rust repo must be 'Rust'");
+assert(recRustJson.recommendations[0]?.install_command.includes("cargo add"), "Must generate cargo add install command");
+
 console.log("-> PASS: CLI stack recommendation verified!");
 
-// [TEST 7] CLI Catalog Command
+// [TEST 7] CLI Catalog Command (Generation & Merge)
 console.log("\n[TEST 7] Testing 'github-stars catalog'...");
 const catRes = await execFileAsync("node", [CLI_PATH, "catalog"]);
 assert(catRes.stdout.includes("Catalog Management"), "Catalog command must output management header");
 assert(catRes.stdout.includes("Catalog file verified"), "Catalog file must be verified");
-console.log("-> PASS: Catalog command verified!");
+
+// Test real export to custom file
+const tempCatalogPath = path.resolve(__dirname, "temp_catalog_test.md");
+try {
+  const catExportRes = await execFileAsync("node", [
+    CLI_PATH,
+    "catalog",
+    "--file",
+    tempCatalogPath,
+    "--mode",
+    "overwrite",
+  ]);
+  assert(catExportRes.stdout.includes("Categories:"), "Must log categories count");
+  const tempContent = await fs.readFile(tempCatalogPath, "utf-8");
+  assert(tempContent.includes("# Curated GitHub Starred Repositories"), "Exported catalog must include title");
+  assert(tempContent.includes("## Table of Contents"), "Exported catalog must include TOC");
+  assert(tempContent.includes("### ["), "Exported catalog must include repository entries");
+
+  // Test merge mode
+  const catMergeRes = await execFileAsync("node", [
+    CLI_PATH,
+    "catalog",
+    "--file",
+    tempCatalogPath,
+    "--mode",
+    "merge",
+  ]);
+  assert(catMergeRes.stdout.includes("Merged"), "Merge mode must report merged status");
+} finally {
+  await fs.unlink(tempCatalogPath).catch(() => {});
+}
+console.log("-> PASS: Catalog command generation and merge verified!");
 
 // [TEST 8] Unknown Command Handling
 console.log("\n[TEST 8] Testing error handling on unknown command...");

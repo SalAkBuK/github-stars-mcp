@@ -23,6 +23,10 @@ import {
   parseCatalogMarkdown,
   mergeCatalogCategories,
   atomicWriteFile,
+  loadSnapshot,
+  saveSnapshot,
+  fetchAllStarsSnapshot,
+  getGitHubToken,
 } from "../index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -81,7 +85,7 @@ function parseArgs(args) {
  */
 function printHelp() {
   console.log(`
-${c.bold}${c.cyan}github-stars${c.reset} - The Second Brain for Starred Repositories (v1.4.0)
+${c.bold}${c.cyan}github-stars${c.reset} - The Second Brain for Starred Repositories (v1.5.0)
 
 ${c.bold}USAGE:${c.reset}
   github-stars <command> [arguments] [options]
@@ -102,6 +106,7 @@ ${c.bold}OPTIONS:${c.reset}
   ${c.yellow}--language <name>${c.reset}        Language filter for stack recommendation (e.g. 'Go')
   ${c.yellow}--mode <merge|overwrite>${c.reset} Mode for catalog command (default: 'merge')
   ${c.yellow}--file <path>${c.reset}            Custom path to GITHUB_STARS.md
+  ${c.yellow}--refresh${c.reset}                Refresh live metadata from GitHub API
   ${c.yellow}--json${c.reset}                   Output results in raw JSON format
   ${c.yellow}--help, -h${c.reset}               Show this help message
 
@@ -179,7 +184,34 @@ async function handleSearch(positional, flags) {
  */
 async function handleAudit(positional, flags) {
   const catalogPath = flags.file || DEFAULT_CATALOG;
-  const repos = await loadCatalogRepos(catalogPath);
+  let repos = [];
+
+  const shouldRefresh = Boolean(flags.refresh);
+  if (shouldRefresh) {
+    try {
+      if (getGitHubToken()) {
+        repos = await fetchAllStarsSnapshot();
+        await saveSnapshot("audit_live", repos);
+      }
+    } catch (err) {
+      // ignore
+    }
+  }
+
+  if (repos.length === 0 && !flags.file) {
+    try {
+      const snap = await loadSnapshot("audit_live");
+      if (Array.isArray(snap) && snap.length > 0) {
+        repos = snap;
+      }
+    } catch (err) {
+      // ignore
+    }
+  }
+
+  if (repos.length === 0) {
+    repos = await loadCatalogRepos(catalogPath);
+  }
 
   const filter = flags.filter || "all";
   const minHealth = flags["min-health"] ? parseInt(flags["min-health"], 10) : null;
@@ -258,7 +290,7 @@ async function handleRecommend(positional, flags) {
   if (result.language) {
     console.log(`${c.bold}Language Filter:${c.reset} ${c.yellow}${result.language}${c.reset}`);
   }
-  console.log(`${c.gray}Evaluated ${result.total_considered} starred repos -> ${result.recommendations_count} top recommendations${c.reset}\n`);
+  console.log(`${c.gray}Evaluated ${result.total_evaluated || result.total_considered || 0} starred repos -> ${result.recommendations_count} top recommendations${c.reset}\n`);
 
   if (result.recommendations.length === 0) {
     console.log(`${c.yellow}No active recommendations found for this task.${c.reset}\n`);
@@ -354,24 +386,106 @@ async function handleSync(positional, flags) {
 }
 
 /**
+ * Format catalog categories into clean GFM Markdown
+ * @param {Array<object>} categories
+ * @param {string} [title="Curated GitHub Starred Repositories"]
+ * @returns {string}
+ */
+function formatCatalogMarkdown(categories, title = "Curated GitHub Starred Repositories") {
+  const lines = [];
+  lines.push(`# ${title}\n`);
+  lines.push(`> Automatically categorized and curated via GitHub Stars CLI on ${new Date().toISOString().slice(0, 10)}.\n`);
+  lines.push("## Table of Contents\n");
+
+  categories.forEach((cat) => {
+    if (!cat) return;
+    const catName = cat.name || "Uncategorized";
+    const anchor = catName
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\- ]+/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    const count = Array.isArray(cat.repos) ? cat.repos.length : 0;
+    lines.push(`- [${catName}](#${anchor}) (${count})`);
+  });
+  lines.push("");
+
+  categories.forEach((cat) => {
+    if (!cat) return;
+    const catName = cat.name || "Uncategorized";
+    lines.push(`---\n\n## ${catName}\n`);
+    if (cat.description) {
+      lines.push(`*${cat.description}*\n`);
+    }
+
+    if (Array.isArray(cat.repos)) {
+      cat.repos.forEach((repo) => {
+        if (!repo) return;
+        const isArchived = Boolean(repo.archived);
+        const repoName = (repo.name || repo.full_name || "unknown").replace(/\s*\[ARCHIVED\]\s*/i, "").trim();
+        const repoUrl = repo.url || repo.html_url || `https://github.com/${repoName}`;
+        const archivedBadge = isArchived ? " [ARCHIVED]" : "";
+        lines.push(`### [${repoName}](${repoUrl})${archivedBadge}`);
+        if (repo.summary || repo.elevator_pitch) {
+          lines.push(`\n${repo.summary || repo.elevator_pitch}\n`);
+        }
+        const tags = Array.isArray(repo.tags) ? repo.tags : (Array.isArray(repo.topics) ? repo.topics : []);
+        const metaParts = [];
+        if (tags.length > 0) {
+          metaParts.push(`**Tags**: \`${tags.join("`, `")}\``);
+        }
+        if (Array.isArray(repo.lists) && repo.lists.length > 0) {
+          metaParts.push(`**List**: *${repo.lists.join(", ")}*`);
+        }
+        if (metaParts.length > 0) {
+          lines.push(metaParts.join(" | ") + "\n");
+        }
+      });
+    }
+  });
+
+  return lines.join("\n");
+}
+
+/**
  * Handle 'catalog' subcommand
  */
 async function handleCatalog(positional, flags) {
-  const filePath = flags.file || DEFAULT_CATALOG;
+  const filePath = flags.file ? path.resolve(process.cwd(), flags.file) : DEFAULT_CATALOG;
+  const sourcePath = flags.source ? path.resolve(process.cwd(), flags.source) : DEFAULT_CATALOG;
   const mode = flags.mode === "overwrite" ? "overwrite" : "merge";
 
   console.log(`\n${c.bold}=== Catalog Management ===${c.reset}`);
   console.log(`Target: ${filePath} (Mode: ${mode})`);
 
   try {
-    const exists = await fs.access(filePath).then(() => true).catch(() => false);
-    if (!exists) {
-      console.log(`${c.yellow}Catalog file does not exist yet. Creating default template...${c.reset}`);
-      const header = `# Curated GitHub Starred Repositories\n\n> Automatically categorized and curated via GitHub Stars CLI on ${new Date().toISOString().slice(0, 10)}.\n\n## Table of Contents\n\n`;
-      await atomicWriteFile(filePath, header, "utf-8");
-    } else {
-      console.log(`${c.green}✓ Catalog file verified:${c.reset} ${filePath}`);
+    let sourceCategories = [];
+    const sourceExists = await fs.access(sourcePath).then(() => true).catch(() => false);
+    if (sourceExists) {
+      const srcContent = await fs.readFile(sourcePath, "utf-8");
+      sourceCategories = parseCatalogMarkdown(srcContent);
     }
+
+    let finalCategories = sourceCategories;
+    let wasMerged = false;
+
+    const targetExists = await fs.access(filePath).then(() => true).catch(() => false);
+    if (targetExists && mode === "merge" && filePath !== sourcePath) {
+      const targetContent = await fs.readFile(filePath, "utf-8");
+      const targetCategories = parseCatalogMarkdown(targetContent);
+      if (targetCategories.length > 0) {
+        finalCategories = mergeCatalogCategories(targetCategories, sourceCategories);
+        wasMerged = true;
+      }
+    }
+
+    const outputMd = formatCatalogMarkdown(finalCategories);
+    await atomicWriteFile(filePath, outputMd, "utf-8");
+
+    const totalRepos = finalCategories.reduce((acc, cat) => acc + (cat.repos?.length || 0), 0);
+    console.log(`${c.green}✓ Catalog file verified:${c.reset} ${filePath}`);
+    console.log(`  Categories: ${finalCategories.length}, Total Repos: ${totalRepos} ${wasMerged ? "(Merged)" : "(Written)"}\n`);
   } catch (err) {
     console.error(`${c.red}Catalog error:${c.reset} ${err.message}`);
     process.exit(1);

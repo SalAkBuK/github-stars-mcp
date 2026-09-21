@@ -229,8 +229,11 @@ async function runExtendedResilienceTests() {
   // TEST 5: Atomic Writes Under High Concurrency
   console.log("[TEST 5] Testing atomic writes under high concurrent load with pre-registered workers...");
   const concurSessionId = `concur_orch_${Date.now()}`;
-  const cacheDir = path.join(__dirname, ".cache");
-  await fs.mkdir(cacheDir, { recursive: true });
+  const serverPath = "C:/Users/saleh/.gemini/config/mcp-servers/github-stars/index.js";
+  const serverCacheDir = path.join(path.dirname(serverPath), ".cache");
+  const localCacheDir = path.join(__dirname, ".cache");
+  await fs.mkdir(serverCacheDir, { recursive: true });
+  await fs.mkdir(localCacheDir, { recursive: true });
 
   const preRegisteredWorkers = Object.create(null);
   for (let i = 0; i < 10; i++) {
@@ -257,11 +260,9 @@ async function runExtendedResilienceTests() {
     categories: {},
   };
 
-  await fs.writeFile(
-    path.join(cacheDir, `orch_${concurSessionId}.json`),
-    JSON.stringify(sessionData, null, 2),
-    "utf-8"
-  );
+  const serialized = JSON.stringify(sessionData, null, 2);
+  await fs.writeFile(path.join(localCacheDir, `orch_${concurSessionId}.json`), serialized, "utf-8");
+  await fs.writeFile(path.join(serverCacheDir, `orch_${concurSessionId}.json`), serialized, "utf-8");
 
   const concurrentSubmits = [];
   for (let i = 0; i < 10; i++) {
@@ -318,7 +319,8 @@ async function runExtendedResilienceTests() {
   );
 
   // Clean up test orchestration file
-  await fs.unlink(path.join(cacheDir, `orch_${concurSessionId}.json`)).catch(() => {});
+  await fs.unlink(path.join(localCacheDir, `orch_${concurSessionId}.json`)).catch(() => {});
+  await fs.unlink(path.join(serverCacheDir, `orch_${concurSessionId}.json`)).catch(() => {});
 
   console.log("-> PASS: Pre-registered workers passed state validation and executed 10 simultaneous atomic disk writes without EBUSY/EPERM errors!\n");
 
