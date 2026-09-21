@@ -10,8 +10,8 @@
   },
   "scripts": {
     "start": "node index.js",
-    "test": "node test_phase1_fixes.js && node test_phase2_fixes.js && node test_phase3_fixes.js && node test_audit_fixes_regression.js && node test/test_audit.js && node test/test_search.js && node test/test_cli.js",
-    "test:features": "node test/test_audit.js && node test/test_search.js && node test/test_cli.js",
+    "test": "node test_phase1_fixes.js && node test_phase2_fixes.js && node test_phase3_fixes.js && node test_audit_fixes_regression.js && node test/test_audit.js && node test/test_search.js && node test/test_recommender.js && node test/test_cli.js",
+    "test:features": "node test/test_audit.js && node test/test_search.js && node test/test_recommender.js && node test/test_cli.js",
     "test:resilience": "node test_resilience_v2.js",
     "search": "node bin/cli.js search",
     "audit": "node bin/cli.js audit",

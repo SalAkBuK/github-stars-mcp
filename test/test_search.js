@@ -165,4 +165,40 @@ const strOptionRes = malformedDocEngine.search("valid", { limit: "1", min_score:
 assert.strictEqual(strOptionRes.length, 1);
 
 console.log("-> PASS: Edge cases and malformed input handling verified!");
+
+// [TEST 7] Singular/Plural Stemming & Tech Token Isolation
+console.log("\n[TEST 7] Testing singular/plural stemming and tech token isolation...");
+
+// Tech token bleed isolation
+const cPlusTokens = tokenize("C++ and C# developer");
+assert(cPlusTokens.includes("c++"), "Must include 'c++'");
+assert(cPlusTokens.includes("c#"), "Must include 'c#'");
+assert(!cPlusTokens.includes("c"), "'c++' and 'c#' must not bleed into standalone 'c' token");
+
+// Pure 'c' preserved
+const cLangTokens = tokenize("Written in C.");
+assert(cLangTokens.includes("c"), "Standalone 'c' must be preserved");
+
+// Cross singular/plural matching
+const singularPluralDoc = {
+  name: "infra/tools",
+  summary: "High-performance decision engines, cloud microservices, and data pipelines for packages.",
+  tags: ["infrastructure"],
+};
+const spEngine = new BM25SearchEngine([singularPluralDoc]);
+
+const qEngine = spEngine.search("decision engine");
+assert(qEngine.length > 0, "Singular 'engine' must match plural 'engines'");
+
+const qService = spEngine.search("service");
+assert(qService.length > 0, "Singular 'service' must match plural 'services'");
+
+const qPipeline = spEngine.search("pipeline");
+assert(qPipeline.length > 0, "Singular 'pipeline' must match plural 'pipelines'");
+
+const qPackage = spEngine.search("package");
+assert(qPackage.length > 0, "Singular 'package' must match plural 'packages'");
+
+console.log("-> PASS: Singular/plural stemming and tech token isolation verified!");
+
 console.log("\n=== All Concept Search Tests PASSED! ===");

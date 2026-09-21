@@ -209,6 +209,18 @@ async function handleAudit(positional, flags) {
     }
   }
 
+  // If no snapshot exists yet, attempt live fetch if authenticated and cache for future runs
+  if (repos.length === 0 && !flags.file) {
+    try {
+      if (getGitHubToken()) {
+        repos = await fetchAllStarsSnapshot();
+        await saveSnapshot("audit_live", repos);
+      }
+    } catch (err) {
+      // ignore
+    }
+  }
+
   if (repos.length === 0) {
     repos = await loadCatalogRepos(catalogPath);
   }
@@ -423,7 +435,7 @@ function formatCatalogMarkdown(categories, title = "Curated GitHub Starred Repos
       cat.repos.forEach((repo) => {
         if (!repo) return;
         const isArchived = Boolean(repo.archived);
-        const repoName = (repo.name || repo.full_name || "unknown").replace(/\s*\[ARCHIVED\]\s*/i, "").trim();
+        const repoName = (repo.full_name || repo.name || "unknown").replace(/\s*\[ARCHIVED\]\s*/i, "").trim();
         const repoUrl = repo.url || repo.html_url || `https://github.com/${repoName}`;
         const archivedBadge = isArchived ? " [ARCHIVED]" : "";
         lines.push(`### [${repoName}](${repoUrl})${archivedBadge}`);
