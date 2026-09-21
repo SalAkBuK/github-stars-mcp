@@ -9,6 +9,9 @@ import { execSync } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { auditRepositories, auditRepository } from "./lib/audit.js";
+import { searchRepositories, loadCatalogRepos } from "./lib/search.js";
+import { recommendStack } from "./lib/recommender.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, ".cache");
@@ -1258,6 +1261,12 @@ async function fetchAllStarsSnapshot() {
         url: repo.html_url,
         starred_at: item.starred_at,
         archived: Boolean(repo.archived),
+        pushed_at: repo.pushed_at || null,
+        updated_at: repo.updated_at || null,
+        created_at: repo.created_at || null,
+        license: repo.license ? (repo.license.spdx_id || repo.license.name || repo.license.key) : null,
+        open_issues_count: repo.open_issues_count ?? 0,
+        forks_count: repo.forks_count ?? 0,
       });
     }
 
@@ -1770,6 +1779,88 @@ const TOOLS = [
         },
       },
       required: [],
+    },
+  },
+  {
+    name: "github_audit_stars_health",
+    description:
+      "Audit health, maintenance freshness, and licensing safety across starred repositories. Detects dead abandonware, stale projects, and unmaintained dependencies with composite 0-100 health scoring.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        filter: {
+          type: "string",
+          enum: ["all", "stale", "archived", "unlicensed"],
+          description:
+            "Filter repositories by risk profile: 'all', 'stale' (no commits >180d or dead), 'archived', or 'unlicensed'. Default: 'all'.",
+        },
+        min_health_score: {
+          type: "number",
+          description:
+            "Optional minimum composite health score filter threshold (0 to 100).",
+        },
+        refresh: {
+          type: "boolean",
+          description:
+            "Force live refresh of repository metadata from GitHub API, bypassing cache.",
+        },
+      },
+    },
+  },
+  {
+    name: "github_search_stars",
+    description:
+      "Instant offline concept & problem-to-solution discovery across starred repositories. Powered by zero-dependency local hybrid BM25 and weighted field scoring (< 5ms).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            "Search query or conceptual description (e.g. 'fast decision engine', 'screen time tracker', 'systems simulation').",
+        },
+        category: {
+          type: "string",
+          description:
+            "Optional category filter to constrain search scope.",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum results to return (default: 10).",
+        },
+        min_score: {
+          type: "number",
+          description:
+            "Minimum BM25 similarity score threshold (default: 0.1).",
+        },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "github_recommend_stack",
+    description:
+      "AI Agent Tech-Stack Recommender: recommends vetted starred tools and libraries for a project brief or task description, with copy-paste installation commands and rationale.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        task_description: {
+          type: "string",
+          description:
+            "Natural language description of what you are building or need.",
+        },
+        language: {
+          type: "string",
+          description:
+            "Optional target programming language (e.g. 'Go', 'Python', 'TypeScript', 'Rust').",
+        },
+        max_recommendations: {
+          type: "number",
+          description:
+            "Maximum number of recommendations to return (default: 5).",
+        },
+      },
+      required: ["task_description"],
     },
   },
 ];
@@ -3184,6 +3275,125 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
+      case "github_audit_stars_health": {
+        const { filter = "all", min_health_score, refresh = false } = args;
+        let repos = [];
+
+        if (refresh) {
+          try {
+            repos = await fetchAllStarsSnapshot();
+            await saveSnapshot("audit_live", repos);
+          } catch (err) {
+            repos = await loadCatalogRepos(path.join(__dirname, "GITHUB_STARS.md"));
+          }
+        } else {
+          const cachedSnap = await loadSnapshot("audit_live");
+          if (cachedSnap && Array.isArray(cachedSnap) && cachedSnap.length > 0) {
+            repos = cachedSnap;
+          } else {
+            try {
+              if (getGitHubToken()) {
+                repos = await fetchAllStarsSnapshot();
+                await saveSnapshot("audit_live", repos);
+              } else {
+                repos = await loadCatalogRepos(path.join(__dirname, "GITHUB_STARS.md"));
+              }
+            } catch (err) {
+              repos = await loadCatalogRepos(path.join(__dirname, "GITHUB_STARS.md"));
+            }
+          }
+        }
+
+        const report = auditRepositories(repos, {
+          filter,
+          min_health_score,
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  success: true,
+                  latency_ms: Date.now() - startTime,
+                  ...report,
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      }
+
+      case "github_search_stars": {
+        const { query, category, limit = 10, min_score = 0.1 } = args;
+        if (!query || typeof query !== "string") {
+          throw new Error("Missing required parameter 'query'");
+        }
+
+        const catalogPath = path.join(__dirname, "GITHUB_STARS.md");
+        const results = await searchRepositories(query, {
+          catalogPath,
+          category,
+          limit,
+          min_score,
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  success: true,
+                  query,
+                  category: category || null,
+                  matches_count: results.length,
+                  latency_ms: Date.now() - startTime,
+                  results,
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      }
+
+      case "github_recommend_stack": {
+        const { task_description, language, max_recommendations = 5 } = args;
+        if (!task_description || typeof task_description !== "string") {
+          throw new Error("Missing required parameter 'task_description'");
+        }
+
+        const catalogPath = path.join(__dirname, "GITHUB_STARS.md");
+        const recommendations = await recommendStack({
+          task_description,
+          language,
+          max_recommendations,
+          catalogPath,
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  success: true,
+                  latency_ms: Date.now() - startTime,
+                  ...recommendations,
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      }
+
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
@@ -3254,5 +3464,12 @@ export {
   sessionLoadPromises,
   chunkedAsyncMap,
   chunkedAsyncAllSettled,
+  fetchAllStarsSnapshot,
+  saveSnapshot,
+  loadSnapshot,
+  deleteSnapshot,
+  searchRepositories,
+  auditRepositories,
+  recommendStack,
   main,
 };

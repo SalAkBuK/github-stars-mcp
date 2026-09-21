@@ -1,16 +1,21 @@
 {
   "name": "github-stars-mcp",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Production-grade Model Context Protocol (MCP) server for organizing, categorizing, and synchronizing GitHub starred repositories with AI agents.",
   "main": "index.js",
   "type": "module",
   "bin": {
-    "github-stars-mcp": "./index.js"
+    "github-stars-mcp": "./index.js",
+    "github-stars": "./bin/cli.js"
   },
   "scripts": {
     "start": "node index.js",
-    "test": "node test_phase1_fixes.js && node test_phase2_fixes.js && node test_phase3_fixes.js && node test_audit_fixes_regression.js",
+    "test": "node test_phase1_fixes.js && node test_phase2_fixes.js && node test_phase3_fixes.js && node test_audit_fixes_regression.js && node test/test_audit.js && node test/test_search.js && node test/test_cli.js",
+    "test:features": "node test/test_audit.js && node test/test_search.js && node test/test_cli.js",
     "test:resilience": "node test_resilience_v2.js",
+    "search": "node bin/cli.js search",
+    "audit": "node bin/cli.js audit",
+    "recommend": "node bin/cli.js recommend",
     "sync": "node sync_stars_to_github.js",
     "generate": "node generate_catalog.js"
   },

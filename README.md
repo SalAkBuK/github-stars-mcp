@@ -24,6 +24,10 @@ Most developers have dozens or hundreds of starred repositories on GitHub that s
 
 ## ⚡ Key Features
 
+- 🔍 **Local Concept & Problem-to-Solution Search Engine**: Zero-dependency local hybrid BM25 with multi-field weighted scoring (`name` 1.5x, `tags` 2.0x, `category` 1.2x, `elevator_pitch` 1.8x, `distilled_readme` 1.0x) and phrase boost. Discovers repositories by conceptual need (e.g. "fast decision engine" -> `NandhaKishorM/laya`, "screen tracker" -> `codetesla51/screentime`) in < 5ms completely offline.
+- 🩺 **Repository Health & Staleness Audit Engine**: Comprehensive freshness categorization (`ACTIVE` <60d, `SLOW` 60-180d, `STALE` 180-365d, `DEAD_ABANDONED` >1y, `ARCHIVED`), legal licensing assessment (Permissive, Copyleft, Unlicensed), and composite 0-100 normalized Health Score.
+- 🤖 **AI Agent Tech-Stack Recommender**: Ingests task descriptions or project briefs, filters out archived/dead tools, and outputs tailored recommendations with copy-paste installation commands (`go install`, `pip install`, `cargo add`, `npm install`) and rationale.
+- 💻 **Unified Standalone Terminal CLI (`github-stars`)**: Run `github-stars search`, `github-stars audit`, `github-stars recommend`, `github-stars sync`, and `github-stars catalog` directly in your terminal with colored dashboards and JSON piping.
 - 🧠 **Multi-Agent Map-Reduce Pipeline**: Freezes an immutable snapshot of all starred repos at initialization (`github_orchestrate_workers`), slices them into deterministic worker chunks (`github_get_worker_chunk`), and collects results into a unified session (`github_submit_worker_digest`) with zero pagination drift.
 - 🧹 **Semantic README Distillation**: Cleanses raw documentation by stripping badges, images, SVGs, license blocks, and tables while strictly preserving centered hero text, elevator pitches, and core architectural concepts.
 - ⚡ **Two-Tier Caching (Memory + Disk)**: L1 in-memory + L2 disk cache. Incremental runs process newly starred repositories in milliseconds, consuming zero API rate limits for existing stars.
@@ -141,6 +145,9 @@ Add this to your `claude_desktop_config.json` (`%APPDATA%\Claude\claude_desktop_
 
 | Tool Name | Type | Description |
 |---|---|---|
+| `github_search_stars` | **Search** | Instant offline concept & problem-to-solution discovery (< 5ms) via local hybrid BM25 and weighted field scoring. |
+| `github_audit_stars_health` | **Audit** | Analyzes repository freshness (active/slow/stale/abandoned/archived), license safety, and calculates composite 0-100 Health Score. |
+| `github_recommend_stack` | **Recommendation** | AI Agent Stack Recommender: matches project briefs to vetted starred tools with copy-paste install commands. |
 | `github_orchestrate_workers` | **Orchestration** | Freezes a static star snapshot, computes optimal chunk sizes, and returns prompt plans for parallel workers. |
 | `github_get_worker_chunk` | **Worker** | Returns an assigned slice of repositories with pre-distilled READMEs and token budgets. |
 | `github_submit_worker_digest` | **Worker** | Ingests analyzed repositories, normalizes category names, and updates the orchestration session. |
@@ -155,6 +162,32 @@ Add this to your `claude_desktop_config.json` (`%APPDATA%\Claude\claude_desktop_
 | `github_list_starred` | **Read** | Lists starred repositories with pagination, stars count, and topics. |
 | `github_get_user_info` | **Info** | Returns authenticated username and total star count. |
 | `github_clear_cache` | **Maintenance** | Flushes in-memory and disk caches. |
+
+---
+
+## 💻 Standalone Terminal CLI (`github-stars`)
+
+You can use `github-stars` as a fast terminal tool completely independent of an active AI assistant:
+
+```bash
+# Instant conceptual search (< 5ms offline)
+npx github-stars search "fast decision engine"
+npx github-stars search "screen tracker" --limit 5
+
+# Repository health and license audit
+npx github-stars audit
+npx github-stars audit --filter stale
+npx github-stars audit --filter unlicensed --json
+
+# AI agent tech-stack recommendation
+npx github-stars recommend "screen time tracker daemon in Go" --language Go
+
+# Live synchronization with GitHub Star Lists
+npx github-stars sync
+
+# Catalog export and merge
+npx github-stars catalog --mode merge
+```
 
 ---
 
