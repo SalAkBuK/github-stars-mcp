@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Cache and local runtime state
+.cache/
+*.log
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Environment and sensitive keys
+.env
+.env.local

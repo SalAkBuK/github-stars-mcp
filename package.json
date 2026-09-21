@@ -1,0 +1,39 @@
+{
+  "name": "github-stars-mcp",
+  "version": "1.4.0",
+  "description": "Production-grade Model Context Protocol (MCP) server for organizing, categorizing, and synchronizing GitHub starred repositories with AI agents.",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "github-stars-mcp": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test_phase1_fixes.js && node test_phase2_fixes.js && node test_phase3_fixes.js && node test_audit_fixes_regression.js",
+    "test:resilience": "node test_resilience_v2.js",
+    "sync": "node sync_stars_to_github.js",
+    "generate": "node generate_catalog.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "github",
+    "github-stars",
+    "ai-agents",
+    "claude-code",
+    "cursor",
+    "antigravity",
+    "taxonomy",
+    "map-reduce"
+  ],
+  "author": "SalAkBuK",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SalAkBuK/github-stars-mcp.git"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.1",
+    "zod": "^3.24.2"
+  }
+}
