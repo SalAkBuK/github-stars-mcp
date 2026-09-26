@@ -2,6 +2,7 @@ import assert from "node:assert";
 import http from "node:http";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { SERVER_ENTRY } from "./test_server_path.js";
 import { githubGraphQL } from "./index.js";
 
 async function runPhase3Tests() {
@@ -9,7 +10,7 @@ async function runPhase3Tests() {
 
   const transport = new StdioClientTransport({
     command: "node",
-    args: ["C:/Users/saleh/.gemini/config/mcp-servers/github-stars/index.js"],
+    args: [SERVER_ENTRY],
   });
 
   const client = new Client(

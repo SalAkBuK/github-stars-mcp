@@ -1,11 +1,12 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { SERVER_ENTRY } from "./test_server_path.js";
 
 async function runTest() {
   console.log("Starting MCP client test with context-awareness verification...");
   const transport = new StdioClientTransport({
     command: "node",
-    args: ["C:/Users/saleh/.gemini/config/mcp-servers/github-stars/index.js"],
+    args: [SERVER_ENTRY],
   });
 
   const client = new Client(

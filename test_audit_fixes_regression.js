@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { SERVER_ENTRY } from "./test_server_path.js";
 import {
   normalizeCategory,
   distillReadme,
@@ -344,7 +345,7 @@ async function runRegressionTests() {
   // 7b. Full MCP Tool Call test
   const transport = new StdioClientTransport({
     command: "node",
-    args: ["C:/Users/saleh/.gemini/config/mcp-servers/github-stars/index.js"],
+    args: [SERVER_ENTRY],
   });
   const client = new Client(
     { name: "test-safety-client", version: "1.0.0" },
