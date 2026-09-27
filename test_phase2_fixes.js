@@ -9,6 +9,7 @@ import {
 } from "./index.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { SERVER_ENTRY } from "./test_server_path.js";
 
 async function runPhase2Tests() {
   console.log("=== Starting Phase 2 (Reliability & Cleanliness) Test Suite ===\n");
@@ -231,7 +232,7 @@ async function runPhase2Tests() {
   console.log("\n[TEST 4] Connecting to MCP Server via Stdio...");
   const transport = new StdioClientTransport({
     command: "node",
-    args: ["C:/Users/saleh/.gemini/config/mcp-servers/github-stars/index.js"],
+    args: [SERVER_ENTRY],
   });
   const client = new Client(
     { name: "phase2-test-client", version: "1.0.0" },

@@ -1,5 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { SERVER_ENTRY } from "./test_server_path.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import assert from "node:assert";
@@ -12,7 +13,7 @@ async function runExtendedResilienceTests() {
 
   const transport = new StdioClientTransport({
     command: "node",
-    args: ["C:/Users/saleh/.gemini/config/mcp-servers/github-stars/index.js"],
+    args: [SERVER_ENTRY],
   });
 
   const client = new Client(
@@ -229,7 +230,7 @@ async function runExtendedResilienceTests() {
   // TEST 5: Atomic Writes Under High Concurrency
   console.log("[TEST 5] Testing atomic writes under high concurrent load with pre-registered workers...");
   const concurSessionId = `concur_orch_${Date.now()}`;
-  const serverPath = "C:/Users/saleh/.gemini/config/mcp-servers/github-stars/index.js";
+  const serverPath = SERVER_ENTRY;
   const serverCacheDir = path.join(path.dirname(serverPath), ".cache");
   const localCacheDir = path.join(__dirname, ".cache");
   await fs.mkdir(serverCacheDir, { recursive: true });
